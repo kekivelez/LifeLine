@@ -4,7 +4,11 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -31,8 +35,11 @@ import com.microsoft.band.sensors.BandAccelerometerEventListener;
 import com.microsoft.band.sensors.SampleRate;
 
 import java.util.Collection;
+import java.util.UUID;
 
+import com.microsoft.band.tiles.BandIcon;
 import com.microsoft.band.tiles.BandTile;
+
 
 
 public class MainActivity extends Activity {
@@ -45,7 +52,13 @@ public class MainActivity extends Activity {
     private EditText contact1Name, contact2Name, contact3Name,
             contact1Phone, contact2Phone, contact3Phone;
     private String gmail = null;
+    private  BandIcon smallIcon;
+    private BandIcon tileIcon;
+    private UUID tileUuid;
+    private BandTile tile;
+    private CountDownTimer instanceTimer = null;
     private final static String TAG = "MainActivity";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +75,18 @@ public class MainActivity extends Activity {
         contact3Phone = (EditText) findViewById(com.hacktheplanet.lifeline.LifeLine.R.id.contact3Phone);
         AccountManager manager = (AccountManager) getSystemService(ACCOUNT_SERVICE);
         Account[] list = manager.getAccounts();
+
+        // create the small and tile icons from writable bitmaps
+        // small icons are 24x24 pixels
+        Bitmap smallIconBitmap = Bitmap.createBitmap(24, 24, null);
+        smallIcon = BandIcon.toBandIcon(smallIconBitmap);
+        // tile icons are 46x46 pixels
+        Bitmap tileIconBitmap = Bitmap.createBitmap(46, 46, null);
+        tileIcon = BandIcon.toBandIcon(tileIconBitmap);
+        // create a new UUID for the tile
+        tileUuid = UUID.randomUUID();
+        // create a new BandTile using the builder
+        tile = new BandTile.Builder(tileUuid,"LifeLine", tileIcon).setTileSmallIcon(smallIcon).build();
 
         for(Account account: list)
         {
@@ -110,11 +135,19 @@ public class MainActivity extends Activity {
                     startAccelListener();
                     Collection<BandTile> tiles = client.getTileManager().getTiles().await();
                     int tileCapacity = client.getTileManager().getRemainingTileCapacity().await();
+                    if(client.getTileManager().addTile(MainActivity.this, tile).await()) {
+                        // do work if the tile was successfully created
+                    }
                     if(client.getSensorManager().getCurrentHeartRateConsent() == UserConsent.GRANTED) {
                         startHRListener();
                     } else {
                         // user has not consented yet, request it
                         client.getSensorManager().requestHeartRateConsent(MainActivity.this, mHeartRateConsentListener);
+                    }
+                    for(BandTile t : tiles) {
+                        if(client.getTileManager().removeTile(t).await()){
+                            // do work if the tile was successfully removed
+                        }
                     }
 
                 } else {
@@ -174,11 +207,18 @@ public class MainActivity extends Activity {
                         if (instanceDialog == null) {
                             showDialog();
                         }
-                        else if (!instanceDialog.isShowing()){
-                            instanceDialog = null;
-                        }
                     }
                 });
+                try {
+                    client.getNotificationManager().showDialog(tileUuid,"Everything ok?",
+                            "Press to dismiss").await();
+
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                catch (BandException e){
+                    e.printStackTrace();
+                }
 
             }
         }
@@ -191,6 +231,8 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
+                instanceTimer.cancel();
+                instanceDialog = null;
             }
         }).create();
         alertDialog.setTitle("Abnormal movement detected, Are You OK?");
@@ -200,7 +242,7 @@ public class MainActivity extends Activity {
 
 
         if (alertDialog.isShowing()) {
-            new CountDownTimer(10000, 1000) {
+            instanceTimer = new CountDownTimer(10000, 1000) {
                 @Override
                 public void onTick(long millisUntilFinished) {
                     alertDialog.setMessage("00:"+ (millisUntilFinished/1000));
@@ -229,6 +271,24 @@ public class MainActivity extends Activity {
                     });
                 }
             }.start();
+        }
+
+    }
+
+    public class TileEventReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent.getAction() == "com.microsoft.band.action.ACTION_TILE_OPENED") {
+                // handle tile opened event
+
+            }
+            else if (intent.getAction() == "com.microsoft.band.action.ACTION_TILE_BUTTON_PRESSED") {
+                // handle button pressed event
+                showDialog();
+            }
+            else if (intent.getAction() == "com.microsoft.band.action.ACTION_TILE_CLOSED") {
+                // handle tile closed event
+            }
         }
     }
 
@@ -265,7 +325,7 @@ public class MainActivity extends Activity {
         @Override
         public void userAccepted(boolean b) {
             // handle user's heart rate consent decision
-            if (b == true) {
+            if (b) {
                 // Consent has been given, start HR sensor event listener
                 startHRListener();
             } else {
