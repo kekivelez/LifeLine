@@ -9,6 +9,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -45,15 +48,11 @@ import com.microsoft.band.tiles.BandTile;
 public class MainActivity extends Activity {
 
     private BandClient client = null;
-    private Button btnStart;
     private TextView txtStatus;
     private TextView accelTest;
     private AlertDialog instanceDialog = null;
     private EditText contact1Name, contact2Name, contact3Name,
             contact1Phone, contact2Phone, contact3Phone;
-    private String gmail = null;
-    private  BandIcon smallIcon;
-    private BandIcon tileIcon;
     private UUID tileUuid;
     private BandTile tile;
     private CountDownTimer instanceTimer = null;
@@ -66,7 +65,7 @@ public class MainActivity extends Activity {
         setContentView(com.hacktheplanet.lifeline.LifeLine.R.layout.activity_main);
 
         txtStatus = (TextView) findViewById(com.hacktheplanet.lifeline.LifeLine.R.id.testText);
-        btnStart = (Button) findViewById(com.hacktheplanet.lifeline.LifeLine.R.id.btnStart);
+        Button btnStart = (Button) findViewById(R.id.btnStart);
         contact1Name = (EditText) findViewById(com.hacktheplanet.lifeline.LifeLine.R.id.contact1Name);
         contact2Name = (EditText) findViewById(com.hacktheplanet.lifeline.LifeLine.R.id.contact2Name);
         contact3Name = (EditText) findViewById(com.hacktheplanet.lifeline.LifeLine.R.id.contact3Name);
@@ -79,10 +78,11 @@ public class MainActivity extends Activity {
         // create the small and tile icons from writable bitmaps
         // small icons are 24x24 pixels
         Bitmap smallIconBitmap = Bitmap.createBitmap(24, 24, null);
-        smallIcon = BandIcon.toBandIcon(smallIconBitmap);
+        BandIcon smallIcon = BandIcon.toBandIcon(smallIconBitmap);
         // tile icons are 46x46 pixels
         Bitmap tileIconBitmap = Bitmap.createBitmap(46, 46, null);
-        tileIcon = BandIcon.toBandIcon(tileIconBitmap);
+        BandIcon tileIcon = BandIcon.toBandIcon(tileIconBitmap);
+
         // create a new UUID for the tile
         tileUuid = UUID.randomUUID();
         // create a new BandTile using the builder
@@ -92,7 +92,7 @@ public class MainActivity extends Activity {
         {
             if(account.type.equalsIgnoreCase("com.google"))
             {
-                this.gmail = account.name;
+                String gmail = account.name;
                 break;
             }
         }
@@ -211,7 +211,7 @@ public class MainActivity extends Activity {
                 });
                 try {
                     client.getNotificationManager().showDialog(tileUuid,"Everything ok?",
-                            "Press to dismiss").await();
+                            "Check phone to dismiss").await();
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
