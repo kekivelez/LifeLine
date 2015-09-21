@@ -9,9 +9,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -256,15 +253,15 @@ public class MainActivity extends Activity {
                         public void run() {
                             Toast.makeText(getApplicationContext(), "Warning not dismissed, notifying emergency Contacts", Toast.LENGTH_LONG).show();
                             if (contact1Phone.getText() != null) {
-                               sendSMS("+1"+contact1Phone.getText().toString(), "Hello " + contact1Name.getText().toString()+ ", this is an automated message from Seize Control." +
+                               sendSMS("+1"+contact1Phone.getText().toString(), "Hello " + contact1Name.getText().toString()+ ", this is an automated message from Lifeline." +
                                        " The owner of this phone did not dismiss the warning and may be in trouble, please contact them.");
                             }
                             if (contact2Phone.getText() != null) {
-                                sendSMS("+1"+contact2Phone.getText().toString(), "Hello " + contact2Name.getText().toString() + ", this is an automated message from Seize Control." +
+                                sendSMS("+1"+contact2Phone.getText().toString(), "Hello " + contact2Name.getText().toString() + ", this is an automated message from Lifeline." +
                                         " The owner of this phone did not dismiss the warning and may be in trouble, please contact them.");
                             }
                             if (contact3Phone.getText() != null) {
-                                sendSMS("+1"+contact3Phone.getText().toString(), "Hello " + contact3Name.getText().toString() + ", this is an automated message from Seize Control." +
+                                sendSMS("+1"+contact3Phone.getText().toString(), "Hello " + contact3Name.getText().toString() + ", this is an automated message from Lifeline." +
                                         " The owner of this phone did not dismiss the warning and may be in trouble, please contact them.");
                             }
                         }
